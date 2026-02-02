@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Styles spécifiques pour l'export PDF via html2pdf */
+.pdf-export-mode {
+    padding: 20px !important;
+    background: white !important;
+}

@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  role             Role              @default(STUDENT)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  notifications    AppNotification[]
+  auditLogs        AuditLog[]
+  messagesReceived InternalMessage[] @relation("ReceivedMessages")
+  messagesSent     InternalMessage[] @relation("SentMessages")
+  loginLogs        LoginLog[]
+  signedUrls       SignedUrl[]
+  student          Student?
+  systemEmails     SystemEmail[]
+  teacher          Teacher?
+}
+
+model Student {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  groupId     String
+  attendances Attendance[]
+  group       Group        @relation(fields: [groupId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  submissions Submission[]
+}
+
+model Teacher {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  assignments Assignment[]
+  user        User         @relation(fields: [userId], references: [id])
+  subjects    Subject[]    @relation("SubjectToTeacher")
+}
+
+model Promotion {
+  id         String  @id @default(cuid())
+  name       String
+  year       Int
+  isArchived Boolean @default(false)
+  groups     Group[]
+}
+
+model Group {
+  id          String       @id @default(cuid())
+  name        String
+  promotionId String
+  assignments Assignment[]
+  promotion   Promotion    @relation(fields: [promotionId], references: [id])
+  students    Student[]
+}
+
+model Subject {
+  id            String       @id @default(cuid())
+  name          String
+  code          String       @unique
+  coefficient   Float        @default(1.0)
+  maxFileSizeMB Int          @default(10)
+  assignments   Assignment[]
+  attendances   Attendance[]
+  teachers      Teacher[]    @relation("SubjectToTeacher")
+}
+
+model Assignment {
+  id              String       @id @default(cuid())
+  title           String
+  description     String
+  deadline        DateTime
+  allowedFormats  String[]
+  maxSizeMB       Int          @default(10)
+  subjectId       String
+  teacherId       String
+  groupId         String
+  statementFileId String?
+  createdAt       DateTime     @default(now())
+  group           Group        @relation(fields: [groupId], references: [id])
+  subject         Subject      @relation(fields: [subjectId], references: [id])
+  teacher         Teacher      @relation(fields: [teacherId], references: [id])
+  submissions     Submission[]
+}
+
+model Submission {
+  id               String     @id @default(cuid())
+  assignmentId     String
+  studentId        String
+  fileId           String?
+  correctionFileId String?
+  submittedAt      DateTime   @default(now())
+  grade            Float?
+  comment          String?
+  status           String     @default("SUBMITTED")
+  version          Int        @default(1)
+  fileIds          String[]   @default([])
+  plagiarismScore  Float?
+  assignment       Assignment @relation(fields: [assignmentId], references: [id])
+  student          Student    @relation(fields: [studentId], references: [id])
+}
+
+model File {
+  id         String   @id @default(cuid())
+  name       String
+  mimeType   String
+  size       Int
+  url        String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+  data       String?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  userId    String
+  action    String
+  details   String
+  severity  String   @default("INFO")
+  ipAddress String?
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model AppNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model CourseResource {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  fileId      String
+  subjectId   String
+  authorId    String
+  createdAt   DateTime @default(now())
+}
+
+model InternalMessage {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  subject    String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Attendance {
+  id        String  @id @default(cuid())
+  studentId String
+  subjectId String
+  date      String
+  status    String
+  student   Student @relation(fields: [studentId], references: [id])
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([studentId, subjectId, date])
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String
+  timestamp DateTime @default(now())
+  success   Boolean
+  ipAddress String?
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model SystemEmail {
+  id      String   @id @default(cuid())
+  userId  String
+  to      String
+  from    String
+  subject String
+  body    String
+  sentAt  DateTime @default(now())
+  isRead  Boolean  @default(false)
+  user    User     @relation(fields: [userId], references: [id])
+}
+
+model SignedUrl {
+  token     String   @id
+  fileId    String
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}

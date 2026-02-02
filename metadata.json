@@ -1,0 +1,7 @@
+{
+  "name": "AcademiaPro - Secure Academic Management Platform",
+  "description": "A comprehensive, high-security academic management system for administrators, teachers, and students. Features RBAC, assignment management, secure file handling, and full audit logging.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
