@@ -4,6 +4,7 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { prisma } from './prisma.js';
 import authRoutes from './routes/auth.routes.js';
@@ -43,7 +44,31 @@ app.use((req, res, next) => {
 // Serve static files from dist folder
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname, '../dist')));
+
+// Try multiple possible paths for dist folder
+const distPaths = [
+    path.join(__dirname, '../dist'), // Standard build path
+    path.join(process.cwd(), 'dist'), // Railway deployment path
+    path.join(__dirname, '../../dist'), // Alternative path
+    path.resolve('dist') // Absolute path from root
+];
+
+let distPath = '';
+for (const testPath of distPaths) {
+    if (fs.existsSync(testPath)) {
+        distPath = testPath;
+        console.log(`✅ Found dist folder at: ${testPath}`);
+        break;
+    }
+}
+
+if (distPath) {
+    app.use(express.static(distPath));
+    console.log(`📁 Serving static files from: ${distPath}`);
+} else {
+    console.warn('⚠️  Dist folder not found in any expected location');
+    console.warn('Expected locations:', distPaths);
+}
 
 // Serve index.html for any non-API routes
 app.get('*', (req, res, next) => {
