@@ -3,6 +3,8 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { prisma } from './prisma.js';
 import authRoutes from './routes/auth.routes.js';
 import coreRoutes from './routes/core.routes.js';
@@ -36,6 +38,20 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
+});
+
+// Serve static files from dist folder
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Serve index.html for any non-API routes
+app.get('*', (req, res, next) => {
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+    } else {
+        next();
+    }
 });
 
 // Health check
