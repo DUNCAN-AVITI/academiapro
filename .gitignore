@@ -30,3 +30,8 @@ Thumbs.db
 
 # Prisma
 prisma/migrations/
+
+# Vercel (nettoyé)
+.vercel# Render deployment
+render.yaml
+
