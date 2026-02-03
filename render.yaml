@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: academiapro-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build:server
+    startCommand: npm run deploy:setup && npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health
+    autoDeploy: false
+
+  - type: web
+    name: academiapro-frontend
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+    pullRequestPreviewsEnabled: true
+    autoDeploy: false
